@@ -1,10 +1,11 @@
 const express =  require ("express");
 const app = express();
 const ejs = require("ejs");
-const bodyparser =require('body-parser')
+const bodyParser =require('body-parser')
 const mongoose = require("mongoose");
 
 const URI = 'mongodb+srv://olanikebasirat620:olAnik_12@cluster0.nb5r67c.mongodb.net/portal_db?retryWrites=true&w=majority'
+
 
 mongoose.connect(URI)
 .then(() =>{
@@ -20,25 +21,30 @@ let userSchema = {
     email:{type:String, required:true, unique:true},
     password:{type:String,required:true} 
 }
-
 let userModel = mongoose.model("users_collection", userSchema)
+
+app.use(bodyParser.urlencoded({extended:true}));
 
 app.set("view engine", "ejs");
 
-app.use(bodyparser.urlencoded({extended:true}));
 
 app.get("/", (req, res) => {
-    res.send("hello nikky")
+    console.log("Request made");
+    //res.send([
+        // {name:"olanike", club:"Arsenal"}
+    // ])
+    // res.send("hello nikky")
+    res.render("home")
 })
 
-app.get("/about", (req, res) => {
+// app.get("/about", (req, res) => {
     //res.send("Hello")
     // res.send([
         // {firstname: "nikky", lastname: "nike"}
     // ]);
-    console.log(__dirname);
-    res.sendFile(_dirname +"/index.html");
-})
+    // console.log(__dirname);
+    // res.sendFile(__dirname +"/index.html");
+// })
 
 app.get("/index", (req,res)=>{
     //res.send("HI INDEX");
@@ -59,8 +65,15 @@ app.get("/signin",(reg,res)=>{
     res.render("signin",{message:""})
 })
 
-app.get("/dash",(reg,res)=>{
-    res.render("dashboard",{message:""})
+app.get("/dashboard",(reg,res)=>{
+    userModel.find()
+    .then((response)=>{
+        console.log(response);
+        res.render("dashboard", {userDetails: response})
+    })
+    .catch((err)=>{
+        console.log(err);
+    });
 })    
 
 app.get("/condition",(req,res)=>{
@@ -74,6 +87,7 @@ app.post("/signup",(req,res)=>{
     .then((response)=>{
         console.log("successfully saved form")
         console.log(response);
+        // res.render("signup",{mesaage:"sign up successfully"})
         res.redirect("/signin")
     })
     .catch((err)=>{
@@ -93,7 +107,7 @@ app.post('/signin',(req,res)=>{
     .then((response)=>{
         console.log(response);
         if (response.length > 0) {
-            res.redirect("/dash")
+            res.redirect("dashboard")
         }else {
             res.render("signin",{message:"Incorrect Email or Password"});
         }    
@@ -102,6 +116,44 @@ app.post('/signin',(req,res)=>{
         console.log(err);
     })
 })
+
+app.post('/delete', (req, res) => {
+    userModel.findOneAndDelete({email:req.body.userEmail})
+    .then((response) =>{
+        console.log(response);
+        res.redirect("dashboard")
+        console.log("delete successfully");
+    })
+    .catch((err) => {
+        console.log(err);
+    });
+})
+
+app.post("/edit", (req, res) =>{
+    userModel.findOne({email: req.body.userEmail})
+    .then((response)=>{
+        console.log(response);
+        res.render("editUser", {userDetails:response})
+    })
+    .catch((err)=>{
+        console.log(err);
+    })
+})
+
+app.post("/update", (req, res) =>{
+    let id = req.body.id;
+    userModel.findByIdAndUpdate(id, req.body)
+    .then((response)=>{
+        console.log(response);
+        res.redirect("dashboard")
+    })
+    .catch((err)=>{
+        console.log(err);
+
+    });
+})
+
+
  
  app.listen(5600, ()=>{
     console.log("server is running")
